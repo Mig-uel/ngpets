@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(25)
+  description   String   @db.VarChar(100)
+  price         Decimal  @db.Decimal(10, 2)
+  image         String?
+  stripePriceId String?
+  isFeatured    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  OrderItem OrderItem[]
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+}
+
+model Order {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String?     @db.Uuid // Firebase Auth UID (optional for guest checkout)
+  status      OrderStatus @default(PENDING)
+  totalAmount Decimal     @db.Decimal(10, 2)
+  paymentId   String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid()) @db.Uuid
+  productId String? @db.Uuid
+  orderId   String? @db.Uuid
+  qty       Int
+  price     Decimal @db.Decimal(10, 2)
+
+  Product Product? @relation(fields: [productId], references: [id])
+  Order   Order?   @relation(fields: [orderId], references: [id])
+}
